@@ -103,6 +103,9 @@
 #include "kangoobms.h"
 #include "OutlanderCanHeater.h"
 #include "OutlanderHeartBeat.h"
+#include "hybrid_supervisor.h"
+#include "hybrid_control.h"
+
 
 #define PRECHARGE_TIMEOUT 5  //5s
 
@@ -175,6 +178,8 @@ static JLR_G2 JLRG2shift;
 static vwHeater heaterVW;
 static NoVehicle VehicleNone;
 static V_Classic classVehicle;
+static HybridSupervisor hybridSupervisor;
+static HybridControl hybridControl;
 static Inverter* selectedInverter = &openInv;
 static Vehicle* selectedVehicle = &VehicleNone;
 static Heater* selectedHeater = &Heaternone;
@@ -511,45 +516,36 @@ static void Ms10Task(void)
 
     selectedChargeInt->Task10Ms();
 
-    if (Param::GetInt(Param::opmode) == MOD_RUN) //!!!THROTTLE CODE HERE//
-    {
-        torquePercent = utils::ProcessThrottle(ABS(previousSpeed)); //run the throttle reading and checks and then generate Potnom
+    if (Param::GetInt(Param::opmode) == MOD_RUN) // Modified throttle code here
+{
+    float pedal = Param::GetFloat(Param::potnom) / 100.0f; // normalize 0-1
+    float vehicleSpeed = selectedInverter->GetMotorSpeed();
+    float soc = Param::GetFloat(Param::soc);
+    float dcBus = Param::GetFloat(Param::udc);
 
+    // Update supervisor (handles engine start state machine)
+    hybridSupervisor.Update(pedal,
+                            Param::GetFloat(Param::brake),
+                            vehicleSpeed,
+                            soc);
 
-        //When requesting regen we need to be careful. If the car is not rolling
-        //in the same direction as the selected gear, we will actually accelerate!
-        //Exclude openinverter here because that has its own regen logic
+    // Update hybrid power control
+    hybridControl.Update(pedal,
+                         vehicleSpeed,
+                         soc,
+                         dcBus,
+                         Param::GetFloat(Param::mg1Speed),
+                         Param::GetFloat(Param::mg2Speed));
 
-        if (torquePercent < 0 && Param::GetInt(Param::Inverter) != InvModes::OpenI)
-        {
-            if(Param::GetInt(Param::reversemotor) == 0)
-            {
-                rollingDirection = previousSpeed >= 0 ? 1 : -1;
-            }
-            else
-            {
-                rollingDirection = previousSpeed >= 0 ? -1 : 1;
-            }
-            //When rolling backward while in forward gear, apply POSITIVE torque to slow down backward motion
-            //Vice versa when in reverse gear and rolling forward.
-            if (rollingDirection != requestedDirection)
-            {
-                torquePercent = -torquePercent;
-            }
-        }
+    float mg2Torque = hybridControl.GetMG2Torque();
 
-        torquePercent *= requestedDirection; //torque requests invert when reverse direction is selected
+    selectedInverter->SetTorque(mg2Torque);
+}
+else
+{
+    selectedInverter->SetTorque(0);
+}
 
-        selectedInverter->Task10Ms();
-    }
-    else
-    {
-        torquePercent = 0;
-        utils::displayThrottle();//just displays pot and pot2 when not in run mode to allow throttle cal
-    }
-
-
-    selectedInverter->SetTorque(torquePercent);
 
 
     if(Param::GetInt(Param::potnom) < Param::GetInt(Param::RegenBrakeLight))
@@ -984,7 +980,6 @@ static void UpdateShifter()
     canInterface[1]->ClearUserMessages();
 }
 
-
 //Whenever the user clears mapped can messages or changes the
 //CAN interface of a device, this will be called by the CanHardware module
 static void SetCanFilters()
@@ -1278,6 +1273,10 @@ extern "C" int main(void)
     UpdateHeater();
     UpdateDCDC();
     UpdateShifter();
+    
+    hybridSupervisor.Init();
+    hybridControl.Init();
+
 
     Stm32Scheduler s(TIM4); //We never exit main so it's ok to put it on stack
     scheduler = &s;
