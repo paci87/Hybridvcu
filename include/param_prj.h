@@ -27,7 +27,7 @@
    2. Temporary parameters (id = 0)
    3. Display values
  */
-//Next param id (increase when adding new parameter!): 139
+//Next param id (increase when adding new parameter!): 150
 /*              category     name         unit       min     max     default id */
 #define PARAM_LIST \
     PARAM_ENTRY(CAT_SETUP,     Inverter,     INVMODES, 0,      8,      0,      5  ) \
@@ -148,7 +148,18 @@
     PARAM_ENTRY(CAT_PWM,       Tim3_1_OC,   "",        1,      100000, 3600,   102 ) \
     PARAM_ENTRY(CAT_PWM,       Tim3_2_OC,   "",        1,      100000, 3600,   103 ) \
     PARAM_ENTRY(CAT_PWM,       Tim3_3_OC,   "",        1,      100000, 3600,   104 ) \
-    PARAM_ENTRY(CAT_PWM,       CP_PWM,   "",        1,      100, 10,   132 ) \
+    PARAM_ENTRY(CAT_PWM,       CP_PWM,   "",           1,         100,   10,   132 ) \
+    PARAM_ENTRY(CAT_POWER,     EngineIdleRPM, "rpm", 500,        1500,  800,   139 ) \
+    PARAM_ENTRY(CAT_POWER,     EngineMaxRPM, "rpm", 2000,        7000, 6400, 140 ) \
+    PARAM_ENTRY(CAT_POWER,     EnginePeakTqRPM, "rpm", 3000,     5000, 4400, 141 ) \
+    PARAM_ENTRY(CAT_POWER,     SOC_MinAssist, "%",    10,          60,   30, 142 ) \
+    PARAM_ENTRY(CAT_POWER,     SOC_MaxAssist, "%",    40,          95,   80, 143 ) \
+    PARAM_ENTRY(CAT_POWER,     AssistScaleLowSpd, "%", 0, 100, 60, 144 ) \
+    PARAM_ENTRY(CAT_POWER,     AssistScaleMidSpd, "%", 0, 100, 45, 145 ) \
+    PARAM_ENTRY(CAT_POWER,     AssistScaleHighSpd, "%", 0, 100, 25, 146 ) \
+    PARAM_ENTRY(CAT_POWER,     MG1CrankTqLim, "Nm", 0, 200, 120, 147 ) \
+    PARAM_ENTRY(CAT_POWER,     TorsionDamp, "%", 0, 100, 20, 148 ) \
+    PARAM_ENTRY(CAT_POWER,     OnePedalGain, "%", 0, 100, 50, 149 ) \
     VALUE_ENTRY(version,       VERSTR,              2000 ) \
     VALUE_ENTRY(opmode,        OPMODES,             2002 ) \
     VALUE_ENTRY(chgtyp,        CHGTYPS,             2003 ) \
@@ -243,8 +254,15 @@
     VALUE_ENTRY(udcheater,     "V",                 2097 ) \
     VALUE_ENTRY(powerheater,   "W",                 2098 ) \
     VALUE_ENTRY(VehLockSt,     ONOFF,               2100 ) \
+    VALUE_ENTRY(EngTargetRPM,  "rpm",               2108 ) \
+    VALUE_ENTRY(EngTqReq,      "Nm",                2109 ) \
+    VALUE_ENTRY(MG1TqReq,      "Nm",                2110 ) \
+    VALUE_ENTRY(MG2TqReq,      "Nm",                2111 ) \
+    VALUE_ENTRY(HybridState,   "state",             2112 ) \
+    VALUE_ENTRY(AssistFactor,  "%",                 2113 ) \
+    VALUE_ENTRY(RegenFactor,   "%",                 2114 ) \
 
-//Next value Id: 2108
+//Next value Id: 2115
 
 //Dead params
 /*
